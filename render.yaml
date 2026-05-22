@@ -1,0 +1,11 @@
+﻿services:
+  - type: web
+    name: serveur-go-downloads
+    runtime: go
+    buildCommand: go build -tags netgo -ldflags '-s -w' -o app
+    startCommand: ./app
+    envVars:
+      - key: ADMIN_USER
+        sync: false
+      - key: ADMIN_PASS
+        sync: false

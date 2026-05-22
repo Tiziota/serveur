@@ -1,0 +1,141 @@
+﻿<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loges Downloads</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <header class="topbar">
+    <div class="brand">LOGES<span>Cloud</span></div>
+    <button id="adminToggle" class="ghost">Admin</button>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <p class="eyebrow">Espace fichiers</p>
+      <h1>Téléchargements rapides, design premium.</h1>
+      <p>Ajoute des liens de fichiers en admin, partage instantanément avec ton équipe.</p>
+    </section>
+
+    <section id="adminPanel" class="panel hidden">
+      <h2>Administration</h2>
+      <div id="authBox" class="stack">
+        <input id="user" type="text" placeholder="Utilisateur" value="admin" />
+        <input id="pass" type="password" placeholder="Mot de passe" />
+        <button id="loginBtn" class="primary">Connexion</button>
+      </div>
+      <div id="addBox" class="stack hidden">
+        <input id="title" type="text" placeholder="Titre du fichier" />
+        <input id="url" type="url" placeholder="https://..." />
+        <textarea id="desc" placeholder="Description (optionnelle)"></textarea>
+        <div class="row">
+          <button id="addBtn" class="primary">Ajouter</button>
+          <button id="logoutBtn" class="ghost">Déconnexion</button>
+        </div>
+      </div>
+      <p id="adminMsg" class="msg"></p>
+    </section>
+
+    <section>
+      <div class="list-head">
+        <h2>Fichiers disponibles</h2>
+        <button id="refreshBtn" class="ghost">Actualiser</button>
+      </div>
+      <div id="list" class="grid"></div>
+    </section>
+  </main>
+
+  <script>
+    const el = (id) => document.getElementById(id);
+    const listEl = el('list');
+    const adminMsg = el('adminMsg');
+    let authed = {{if .IsAuthed}}true{{else}}false{{end}};
+
+    function card(file) {
+      const date = new Date(file.addedAt).toLocaleString('fr-FR');
+      return `
+        <article class="card">
+          <h3>${file.title}</h3>
+          <p>${file.description || 'Aucune description.'}</p>
+          <div class="meta">Ajouté le ${date}</div>
+          <a href="${file.url}" target="_blank" rel="noopener" class="download">Télécharger</a>
+        </article>
+      `;
+    }
+
+    async function loadFiles() {
+      const res = await fetch('/api/files');
+      const data = await res.json();
+      const files = data.files || [];
+      listEl.innerHTML = files.length ? files.map(card).join('') : '<p class="empty">Aucun fichier pour le moment.</p>';
+    }
+
+    function syncAdminUI() {
+      el('authBox').classList.toggle('hidden', authed);
+      el('addBox').classList.toggle('hidden', !authed);
+    }
+
+    async function login() {
+      const user = el('user').value;
+      const pass = el('pass').value;
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({user, pass}),
+      });
+      if (!res.ok) {
+        adminMsg.textContent = 'Identifiants invalides.';
+        return;
+      }
+      authed = true;
+      adminMsg.textContent = 'Connecté.';
+      syncAdminUI();
+    }
+
+    async function logout() {
+      await fetch('/api/admin/logout', { method: 'POST' });
+      authed = false;
+      adminMsg.textContent = 'Déconnecté.';
+      syncAdminUI();
+    }
+
+    async function addFile() {
+      const title = el('title').value.trim();
+      const url = el('url').value.trim();
+      const description = el('desc').value.trim();
+      const res = await fetch('/api/admin/files', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ title, url, description }),
+      });
+      if (!res.ok) {
+        adminMsg.textContent = 'Ajout impossible (vérifie le lien ou la session).';
+        return;
+      }
+      adminMsg.textContent = 'Fichier ajouté.';
+      el('title').value = '';
+      el('url').value = '';
+      el('desc').value = '';
+      await loadFiles();
+    }
+
+    el('adminToggle').addEventListener('click', () => {
+      el('adminPanel').classList.toggle('hidden');
+      syncAdminUI();
+    });
+    el('loginBtn').addEventListener('click', login);
+    el('logoutBtn').addEventListener('click', logout);
+    el('addBtn').addEventListener('click', addFile);
+    el('refreshBtn').addEventListener('click', loadFiles);
+
+    syncAdminUI();
+    loadFiles();
+  </script>
+</body>
+</html>

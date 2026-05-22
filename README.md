@@ -1,4 +1,4 @@
-﻿# Serveur - Go Downloads
+# Serveur - Go Downloads
 
 Site de téléchargement de fichiers en Go avec espace admin.
 

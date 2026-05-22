@@ -1,6 +1,7 @@
-﻿package main
+package main
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -15,6 +16,8 @@ import (
 	"sync"
 	"time"
 )
+
+var utf8BOM = []byte{0xEF, 0xBB, 0xBF}
 
 type FileItem struct {
 	ID          string    `json:"id"`
@@ -54,6 +57,7 @@ func (s *Store) load() error {
 	if err != nil {
 		return err
 	}
+	b = bytes.TrimPrefix(b, utf8BOM)
 	if len(strings.TrimSpace(string(b))) == 0 {
 		s.items = []FileItem{}
 		return nil
@@ -181,6 +185,7 @@ func (a *App) home(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data := map[string]any{
 		"IsAuthed": a.isAuthed(r),
 	}

@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   const el = (id) => document.getElementById(id);
   const listEl = el('list');
   const adminMsg = el('adminMsg');

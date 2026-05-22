@@ -1,3 +1,3 @@
-﻿module github.com/Tiziota/serveur
+module github.com/Tiziota/serveur
 
 go 1.22

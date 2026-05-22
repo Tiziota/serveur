@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css" />
 </head>
-<body>
+<body data-authed="{{if .IsAuthed}}true{{else}}false{{end}}">
   <div class="bg-glow"></div>
   <header class="topbar">
     <div class="brand">LOGES<span>Cloud</span></div>
@@ -51,91 +51,6 @@
     </section>
   </main>
 
-  <script>
-    const el = (id) => document.getElementById(id);
-    const listEl = el('list');
-    const adminMsg = el('adminMsg');
-    let authed = {{if .IsAuthed}}true{{else}}false{{end}};
-
-    function card(file) {
-      const date = new Date(file.addedAt).toLocaleString('fr-FR');
-      return `
-        <article class="card">
-          <h3>${file.title}</h3>
-          <p>${file.description || 'Aucune description.'}</p>
-          <div class="meta">Ajouté le ${date}</div>
-          <a href="${file.url}" target="_blank" rel="noopener" class="download">Télécharger</a>
-        </article>
-      `;
-    }
-
-    async function loadFiles() {
-      const res = await fetch('/api/files');
-      const data = await res.json();
-      const files = data.files || [];
-      listEl.innerHTML = files.length ? files.map(card).join('') : '<p class="empty">Aucun fichier pour le moment.</p>';
-    }
-
-    function syncAdminUI() {
-      el('authBox').classList.toggle('hidden', authed);
-      el('addBox').classList.toggle('hidden', !authed);
-    }
-
-    async function login() {
-      const user = el('user').value;
-      const pass = el('pass').value;
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({user, pass}),
-      });
-      if (!res.ok) {
-        adminMsg.textContent = 'Identifiants invalides.';
-        return;
-      }
-      authed = true;
-      adminMsg.textContent = 'Connecté.';
-      syncAdminUI();
-    }
-
-    async function logout() {
-      await fetch('/api/admin/logout', { method: 'POST' });
-      authed = false;
-      adminMsg.textContent = 'Déconnecté.';
-      syncAdminUI();
-    }
-
-    async function addFile() {
-      const title = el('title').value.trim();
-      const url = el('url').value.trim();
-      const description = el('desc').value.trim();
-      const res = await fetch('/api/admin/files', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ title, url, description }),
-      });
-      if (!res.ok) {
-        adminMsg.textContent = 'Ajout impossible (vérifie le lien ou la session).';
-        return;
-      }
-      adminMsg.textContent = 'Fichier ajouté.';
-      el('title').value = '';
-      el('url').value = '';
-      el('desc').value = '';
-      await loadFiles();
-    }
-
-    el('adminToggle').addEventListener('click', () => {
-      el('adminPanel').classList.toggle('hidden');
-      syncAdminUI();
-    });
-    el('loginBtn').addEventListener('click', login);
-    el('logoutBtn').addEventListener('click', logout);
-    el('addBtn').addEventListener('click', addFile);
-    el('refreshBtn').addEventListener('click', loadFiles);
-
-    syncAdminUI();
-    loadFiles();
-  </script>
+  <script src="/static/app.js"></script>
 </body>
 </html>
